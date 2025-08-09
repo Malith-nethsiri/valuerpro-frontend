@@ -13,11 +13,5 @@
             "src": "/(.*)",
             "dest": "/index.html"
         }
-    ],
-    "env": {
-        "VITE_API_URL": "@vite_api_url",
-        "VITE_GOOGLE_MAPS_API_KEY": "@vite_google_maps_api_key",
-        "VITE_PADDLE_VENDOR_ID": "@vite_paddle_vendor_id",
-        "VITE_PADDLE_ENVIRONMENT": "@vite_paddle_environment"
-    }
+    ]
 }

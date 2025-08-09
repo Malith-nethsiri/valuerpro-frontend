@@ -18,9 +18,10 @@
 Set these in your Vercel project settings:
 
 ```bash
-VITE_API_BASE_URL=https://your-backend-url.railway.app
+VITE_API_URL=https://your-backend-url.railway.app
 VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 VITE_PADDLE_VENDOR_ID=your_paddle_vendor_id
+VITE_PADDLE_ENVIRONMENT=sandbox
 ```
 
 ### 3. Automatic Deployment
