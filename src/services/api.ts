@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from 'axios';
 import {
     User,
     Report,
+    ReportSummary,
+    ReportDetail,
     LoginCredentials,
     RegisterData,
     CreateReportRequest,
@@ -16,7 +18,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance with interceptors
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: `${API_BASE_URL}/api`,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -107,24 +109,24 @@ export const usersAPI = {
 
 // Reports API
 export const reportsAPI = {
-    getReports: async (page: number = 1, per_page: number = 10): Promise<PaginatedResponse<Report>> => {
+    getReports: async (page: number = 1, per_page: number = 10): Promise<PaginatedResponse<ReportSummary>> => {
         const response = await api.get('/reports/', {
             params: { page, per_page },
         });
         return response.data;
     },
 
-    getReport: async (id: string): Promise<Report> => {
+    getReport: async (id: string): Promise<ReportDetail> => {
         const response = await api.get(`/reports/${id}`);
         return response.data;
     },
 
-    createReport: async (data: CreateReportRequest): Promise<Report> => {
+    createReport: async (data: CreateReportRequest): Promise<ReportDetail> => {
         const response = await api.post('/reports/', data);
         return response.data;
     },
 
-    updateReport: async (id: string, data: Partial<Report>): Promise<Report> => {
+    updateReport: async (id: string, data: Partial<ReportDetail>): Promise<ReportDetail> => {
         const response = await api.put(`/reports/${id}`, data);
         return response.data;
     },
@@ -200,6 +202,19 @@ export const filesAPI = {
 export const aiAPI = {
     getSuggestions: async (data: any): Promise<{ suggestions: any }> => {
         const response = await api.post('/ai/suggestions', data);
+        return response.data;
+    },
+};
+
+// Billing API
+export const billingAPI = {
+    getSubscription: async (): Promise<Subscription> => {
+        const response = await api.get('/billing/subscription');
+        return response.data;
+    },
+
+    createCheckout: async (priceId: string): Promise<{ checkout_url: string }> => {
+        const response = await api.post('/billing/checkout', { price_id: priceId });
         return response.data;
     },
 };

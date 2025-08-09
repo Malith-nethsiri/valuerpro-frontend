@@ -1,34 +1,92 @@
 export interface User {
     id: string;
     email: string;
+    first_name: string;
+    last_name: string;
     role: 'admin' | 'valuer' | 'client';
     is_active: boolean;
     created_at: string;
     updated_at: string;
     profile?: ValuerProfile;
+    subscription?: Subscription;
 }
 
 export interface ValuerProfile {
     id: string;
     user_id: string;
+    titles?: string[];
     full_name: string;
-    license_number: string;
-    phone: string;
-    address: string;
-    qualification: string;
-    experience_years: number;
-    specialized_areas: string[];
-    signature_url?: string;
+    qualifications?: string[];
+    panel_memberships?: string[];
+    address_lines?: string[];
+    phones?: string[];
+    email?: string;
+    created_at: string;
+    updated_at?: string;
 }
 
-export interface Report {
-    id: string;
-    title: string;
-    report_type: 'residential' | 'commercial' | 'land' | 'industrial';
-    status: 'draft' | 'in_progress' | 'completed' | 'sent';
+export interface Subscription {
+    plan: 'TRIAL' | 'PRO';
+    status: 'active' | 'inactive';
+    monthly_quota: number;
+    reports_used: number;
+    reports_remaining: number;
+    current_period_start?: string;
+    current_period_end?: string;
+    paddle_subscription_id?: string;
+}
+
+// New Report schemas matching backend
+export interface ReportSummary {
+    id: number;
+    report_reference: string;
+    subject_text?: string;
+    requesting_bank_name?: string;
+    status: string;
+    market_value?: number;
+    inspection_date?: string;
     created_at: string;
-    updated_at: string;
-    valuer_id: string;
+    updated_at?: string;
+    completion_percentage: number;
+    landmarks_text?: string;
+}
+
+export interface ReportDetail {
+    id: number;
+    report_reference: string;
+    requesting_bank_name?: string;
+    requesting_branch?: string;
+    bank_reference_letter?: string;
+    purpose?: string;
+    inspection_date?: string;
+    inspection_time?: string;
+    weather_conditions?: string;
+    subject_text?: string;
+    latitude?: number;
+    longitude?: number;
+    access_route_description?: string;
+    nearest_main_road?: string;
+    distance_to_main_road?: string;
+    valuation_summary?: string;
+    recommendations?: string;
+    certificate_of_identity?: string;
+    special_conditions?: string;
+    valuation_fee?: number;
+    travel_cost?: number;
+    landmarks_text?: string;
+    market_value?: number;
+    status: string;
+    created_at: string;
+    updated_at?: string;
+    completion_percentage: number;
+    user_id: number;
+}
+
+// Legacy Report interface for backward compatibility
+export interface Report extends ReportDetail {
+    title?: string;
+    report_type?: 'residential' | 'commercial' | 'land' | 'industrial';
+    valuer_id?: string;
     applicant?: Applicant;
     property_info?: PropertyInfo;
     valuation?: Valuation;
@@ -113,19 +171,6 @@ export interface Photo {
     uploaded_at: string;
 }
 
-export interface Subscription {
-    id: string;
-    user_id: string;
-    plan_type: 'basic' | 'premium' | 'enterprise';
-    status: 'active' | 'inactive' | 'cancelled';
-    start_date: string;
-    end_date: string;
-    reports_limit: number;
-    reports_used: number;
-    price: number;
-    currency: string;
-}
-
 export interface PaymentIntent {
     checkout_url: string;
     transaction_id: string;
@@ -160,11 +205,10 @@ export interface RegisterData {
 }
 
 export interface CreateReportRequest {
-    title: string;
-    report_type: 'residential' | 'commercial' | 'land' | 'industrial';
-    property_address?: string;
-    property_latitude?: number;
-    property_longitude?: number;
+    requesting_bank_name?: string;
+    requesting_branch?: string;
+    bank_reference_letter?: string;
+    purpose?: string;
 }
 
 export interface UpdateProfileRequest {

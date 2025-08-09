@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { reportsAPI, paymentsAPI } from '../services/api';
+import { reportsAPI, billingAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
@@ -10,6 +10,8 @@ import {
     ClockIcon,
     CheckCircleIcon,
     CreditCardIcon,
+    ChartBarIcon,
+    CalendarIcon,
 } from '@heroicons/react/24/outline';
 
 const DashboardPage: React.FC = () => {
@@ -20,34 +22,41 @@ const DashboardPage: React.FC = () => {
         queryFn: () => reportsAPI.getReports(1, 5),
     });
 
-    const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery({
-        queryKey: ['subscriptions'],
-        queryFn: () => paymentsAPI.getSubscriptions(),
+    const { data: subscription, isLoading: subscriptionLoading } = useQuery({
+        queryKey: ['subscription'],
+        queryFn: () => billingAPI.getSubscription(),
     });
 
-    const activeSubscription = subscriptions?.find(sub => sub.status === 'active');
-    const hasProfile = user?.profile && user.profile.full_name && user.profile.license_number;
+    const hasProfile = user?.profile && user.profile.full_name;
 
-    if (reportsLoading || subscriptionsLoading) {
+    if (reportsLoading || subscriptionLoading) {
         return <LoadingSpinner className="h-64" />;
     }
 
     const reports = reportsData?.items || [];
     const recentReports = reports.slice(0, 3);
 
+    // Calculate this month's reports
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const thisMonthReports = reports.filter(report => {
+        const reportDate = new Date(report.created_at);
+        return reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
+    }).length;
+
     const stats = [
         {
-            name: 'Total Reports',
-            value: reportsData?.total || 0,
-            icon: DocumentTextIcon,
+            name: 'Reports This Month',
+            value: thisMonthReports,
+            icon: ChartBarIcon,
             color: 'text-blue-600',
             bgColor: 'bg-blue-100',
         },
         {
-            name: 'In Progress',
-            value: reports.filter(r => r.status === 'in_progress').length,
-            icon: ClockIcon,
-            color: 'text-yellow-600',
+            name: 'Remaining Quota',
+            value: subscription?.reports_remaining || 0,
+            icon: DocumentTextIcon,
+            color: 'text-green-600',
             bgColor: 'bg-yellow-100',
         },
         {
@@ -101,16 +110,16 @@ const DashboardPage: React.FC = () => {
             )}
 
             {/* Subscription status */}
-            {activeSubscription && (
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+            {subscription && subscription.status === 'active' && (
+                <div className="bg-white overflow-hidden shadow-soft rounded-2xl">
                     <div className="p-6">
                         <div className="flex items-center">
                             <CreditCardIcon className="h-8 w-8 text-green-600" />
                             <div className="ml-4">
-                                <h3 className="text-lg font-medium text-gray-900">Active Subscription</h3>
+                                <h3 className="text-lg font-semibold text-gray-900">{subscription.plan} Subscription</h3>
                                 <p className="text-sm text-gray-600">
-                                    {activeSubscription.plan_type.charAt(0).toUpperCase() + activeSubscription.plan_type.slice(1)} Plan
-                                    • {activeSubscription.reports_used}/{activeSubscription.reports_limit} reports used
+                                    {subscription.reports_used}/{subscription.monthly_quota} reports used this month
+                                    • {subscription.reports_remaining} remaining
                                 </p>
                             </div>
                         </div>
@@ -118,21 +127,37 @@ const DashboardPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Upgrade prompt for trial users */}
+            {subscription && subscription.plan === 'TRIAL' && subscription.reports_remaining <= 1 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-blue-900">Running Low on Reports</h3>
+                            <p className="text-blue-700 mt-1">
+                                You have {subscription.reports_remaining} reports remaining. Upgrade to PRO for 20 reports per month.
+                            </p>
+                        </div>
+                        <Link
+                            to="/subscription"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            Upgrade Now
+                        </Link>
+                    </div>
+                </div>
+            )}
+
             {/* Stats */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 {stats.map((item) => (
-                    <div key={item.name} className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className={`flex-shrink-0 p-3 rounded-md ${item.bgColor}`}>
-                                    <item.icon className={`h-6 w-6 ${item.color}`} />
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{item.value}</dd>
-                                    </dl>
-                                </div>
+                    <div key={item.name} className="bg-white rounded-2xl shadow-soft p-6">
+                        <div className="flex items-center">
+                            <div className={`flex-shrink-0 p-3 rounded-xl ${item.bgColor}`}>
+                                <item.icon className={`h-6 w-6 ${item.color}`} />
+                            </div>
+                            <div className="ml-4 flex-1">
+                                <dt className="text-sm font-medium text-gray-600">{item.name}</dt>
+                                <dd className="text-2xl font-bold text-gray-900 mt-1">{item.value}</dd>
                             </div>
                         </div>
                     </div>
@@ -196,10 +221,10 @@ const DashboardPage: React.FC = () => {
                                     <div>
                                         <span
                                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${report.status === 'completed'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : report.status === 'in_progress'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-gray-100 text-gray-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : report.status === 'in_progress'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-gray-100 text-gray-800'
                                                 }`}
                                         >
                                             {report.status.replace('_', ' ')}
